@@ -1,0 +1,39 @@
+{
+  "name": "fantaclub-sideapp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start",
+    "lint": "eslint",
+    "seed": "ts-node --esm scripts/seed.ts",
+    "seed:teams": "ts-node --esm scripts/seed-teams.ts",
+    "seed:fake": "ts-node --esm scripts/seed-fake.ts",
+    "seed:standings": "ts-node --esm scripts/seed-standings.ts",
+    "seed:history": "ts-node --esm scripts/seed-history.ts",
+    "import:players": "ts-node scripts/import-fg-players.ts"
+  },
+  "dependencies": {
+    "csv-parse": "^6.1.0",
+    "firebase": "^12.1.0",
+    "firebase-admin": "^13.4.0",
+    "lucide-react": "^0.541.0",
+    "next": "15.5.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "slugify": "^1.6.6"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.11",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.0",
+    "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
+  }
+}
