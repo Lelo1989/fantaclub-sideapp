@@ -1,0 +1,56 @@
+/* ====== FM24 SKIN (override “a caldo” delle classi più usate) ====== */
+
+/* Palette */
+.fm {
+  --fm-bg: #111322;
+  --fm-surface: #171a2b;
+  --fm-surface-2: #1d2140;
+  --fm-border: rgba(255,255,255,0.08);
+  --fm-text: #E6E7EA;
+  --fm-muted: #A1A6B3;
+  --fm-accent: #F59E0B;
+  --sidebar-gradient: linear-gradient(180deg,#6D4AEF 0%,#5C3CF2 40%,#7C3AED 100%);
+}
+
+/* Sfondo + testo globale */
+.fm { background: var(--fm-bg); color: var(--fm-text); }
+
+/* Sidebar gradient (AppShell usa inline style, ma mettiamo una fallback class) */
+.fm .sidebar-gradient { background-image: var(--sidebar-gradient); }
+
+/* ----- OVERRIDE classi Tailwind più frequenti (NON rompiamo il markup) ----- */
+.fm .bg-white          { background-color: var(--fm-surface) !important; }
+.fm .bg-slate-50       { background-color: var(--fm-bg) !important; }
+.fm .shadow-sm         { box-shadow: 0 1px 0 rgba(0,0,0,.25) !important; }
+.fm .border            { border-color: var(--fm-border) !important; }
+.fm .text-slate-900,
+.fm .text-gray-900     { color: var(--fm-text) !important; }
+.fm .text-gray-600,
+.fm .text-gray-500     { color: var(--fm-muted) !important; }
+.fm .divide-y > :not([hidden]) ~ :not([hidden]) { border-color: var(--fm-border) !important; }
+
+/* Badge e bottoni “neutri” */
+.fm .btn,
+.fm .fm-btn { 
+  display:inline-flex; align-items:center; justify-content:center;
+  height:34px; padding:0 12px; border-radius:10px; font-size:13px;
+  border:1px solid var(--fm-border)!important; background:rgba(255,255,255,.04)!important; color:var(--fm-text)!important;
+}
+.fm .btn:hover, .fm .fm-btn:hover { background: rgba(255,255,255,.08)!important; }
+
+/* CTA accent (usa dove vuoi aggiungendo la classe fm-btn--accent) */
+.fm .fm-btn--accent { background: var(--fm-accent)!important; border-color: transparent!important; color:#1b1000!important; }
+
+/* Link */
+.fm a, .fm .underline { color:#c9c8ff; }
+.fm a:hover, .fm .underline:hover { opacity:.85; }
+
+/* Card “tipiche” della tua UI: arrotondamenti morbidi */
+.fm .rounded-2xl { border-radius: 16px !important; }
+.fm .rounded-xl  { border-radius: 12px !important; }
+
+/* Immagini stadio con bordo tenue */
+.fm .stadium-img { border:1px solid var(--fm-border)!important; border-radius: 12px!important; overflow:hidden; }
+
+/* OPTIONAL: force topbar scura su mobile */
+.fm header.md\:hidden { background: rgba(17,19,34,.7)!important; border-bottom:1px solid var(--fm-border)!important; color:var(--fm-text)!important; }

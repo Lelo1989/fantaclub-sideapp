@@ -1,124 +1,175 @@
 "use client";
 
-import { useAuth } from "@/components/AuthProvider";
-import { signOut } from "@/lib/auth";
+import Image from "next/image";
+import Link from "next/link";
+import * as React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { db } from "@/lib/firebase";
+import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { useTeamData } from "@/hooks/useTeamData";
-import Panel from "@/components/Panel";
-import { RoleBadge, StatusTag } from "@/components/RoleBadge";
-import AppShell from "@/components/AppShell";
+import { useStadium } from "@/hooks/useStadium";
+import { useExpiringContracts, type Contract } from "@/hooks/useExpiringContracts";
+import { useCurrentSeasonId } from "@/hooks/useCurrentSeasonId";
+import { CardSkeleton } from "@/components/CardSkeleton";
+import { TableSkeleton } from "@/components/TablSkeleton";
+
+type Stadium = { id: string; teamId: string; name: string; capacity: number; ticketPrice: number; imageUrl?: string; };
+type HistoryEvent = { id: string; teamId: string; seasonId?: string; kind: string; payload?: any; createdAt?: any; };
+
+function withDocId<T extends Record<string, any>>(d: QueryDocumentSnapshot<DocumentData>) {
+  const data = d.data() as Record<string, any>;
+  const { id: _ignore, ...rest } = data;
+  return { id: d.id, ...rest } as T & { id: string };
+}
+
+function Section({ title, right, children, alt=false }: { title: string; right?: React.ReactNode; children: React.ReactNode; alt?: boolean }) {
+  return (
+    <section className={`fm-card ${alt ? "fm-card--alt" : ""}`}>
+      <header className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between">
+        <h2 className="font-semibold">{title}</h2>
+        {right}
+      </header>
+      <div className="px-4 md:px-5 pb-4">{children}</div>
+    </section>
+  );
+}
+
+function OverviewCard({ teamName, budget, seasonId }: { teamName?: string; budget?: number; seasonId?: string | null }) {
+  const money = (n?: number) => (n==null? "—" : new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n));
+  return (
+    <Section title="Panoramica" alt>
+      <div className="grid grid-cols-2 gap-4 text-sm fm-muted">
+        <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="text-xs uppercase tracking-wider">Squadra</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">{teamName ?? "—"}</div>
+        </div>
+        <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="text-xs uppercase tracking-wider">Budget</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">{money(budget)}</div>
+        </div>
+        <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="text-xs uppercase tracking-wider">Stagione</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">{seasonId ?? "—"}</div>
+        </div>
+        <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
+          <div className="text-xs uppercase tracking-wider">Azioni rapide</div>
+          <div className="mt-2 flex gap-2">
+            <Link href="/contracts" className="fm-btn">Rinnovi</Link>
+            <Link href="/stadium" className="fm-btn fm-btn--accent">Matchday</Link>
+          </div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function StadiumCard({ stadium }: { stadium: Stadium | null }) {
+  return (
+    <Section title={stadium?.name ?? "Stadio"} right={<Link href="/stadium" className="fm-link text-sm">Apri Stadio</Link>}>
+      <div className="flex items-center gap-4">
+        <div className="relative w-28 h-20 rounded-xl overflow-hidden shrink-0 border fm-border">
+          <Image
+            src={stadium?.imageUrl || "/stadium-placeholder.jpg"}
+            alt={stadium?.name || "Stadio"}
+            fill
+            className="object-cover"
+            sizes="112px"
+            priority
+          />
+        </div>
+        <div className="text-sm fm-muted">
+          <div>Capienza: <b className="text-[var(--fm-text)]">{stadium?.capacity ?? "—"}</b></div>
+          <div>Prezzo medio: <b className="text-[var(--fm-text)]">{stadium?.ticketPrice ?? "—"}</b></div>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+function ExpiringContractsList({ data, seasonId }: { data: Contract[]; seasonId?: string | null }) {
+  return (
+    <Section
+      title={`Contratti in scadenza ${seasonId ? `(${seasonId})` : ""}`}
+      right={<Link href="/contracts" className="fm-link text-sm">Gestisci</Link>}
+    >
+      {data.length === 0 ? (
+        <div className="text-sm fm-muted">Nessun contratto in scadenza.</div>
+      ) : (
+        <ul className="divide-y divide-[var(--fm-border)]">
+          {data.map((c) => (
+            <li key={c.id} className="py-3 flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{c.playerName}</div>
+                <div className="text-xs fm-muted">{c.role}</div>
+              </div>
+              <Link className="fm-btn" href="/contracts">Rinnova</Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
+
+function HistoryList({ events }: { events: HistoryEvent[] }) {
+  const fmtDate = (x:any) => {
+    try{ if (x?.toDate) return x.toDate().toLocaleString("it-IT"); const d=new Date(x); return isNaN(+d)?"":d.toLocaleString("it-IT"); }catch{ return ""; }
+  };
+  return (
+    <Section title="Ultimi eventi" right={<Link href="/history" className="fm-link text-sm">Dettagli</Link>} alt>
+      {events.length === 0 ? (
+        <div className="text-sm fm-muted">Nessun evento recente.</div>
+      ) : (
+        <ul className="divide-y divide-[var(--fm-border)]">
+          {events.map((e) => (
+            <li key={e.id} className="py-3 flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="font-medium truncate">{e.kind.replace(/\./g, " · ")}</div>
+                <div className="text-xs fm-muted truncate">{fmtDate(e.createdAt)}</div>
+              </div>
+              <span className="fm-badge">{e.seasonId ?? ""}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Section>
+  );
+}
 
 export default function DashboardPage() {
-  const { user } = useAuth();
-  const { team, stadium, contracts, loading, error } = useTeamData();
+  const { team } = useTeamData();
+  const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
+  const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
-  const currentYear = new Date().getFullYear();
-  const expiring = contracts.filter(c => c.status === "active" && c.endYear <= currentYear);
+  const { stadium, loading: loadingStadium } = useStadium(teamId ?? undefined);
+  const { data: expiring, loading: loadingContracts } = useExpiringContracts(teamId ?? undefined, seasonId ?? undefined);
+
+  const [events, setEvents] = useState<HistoryEvent[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
+  useEffect(() => {
+    if (!teamId) return;
+    setLoadingEvents(true);
+    const q = query(collection(db, "teamHistory"), where("teamId","==",teamId), orderBy("createdAt","desc"), limit(5));
+    const unsub = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => withDocId<HistoryEvent>(d));
+      setEvents(rows); setLoadingEvents(false);
+    });
+    return () => unsub();
+  }, [teamId]);
 
   return (
-    <AppShell>
-      <div className="space-y-6">
-        {/* Header “hub” */}
-        <div className="flex items-end justify-between">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Dashboard</h1>
-            <p className="text-white/60 text-xs sm:text-sm mt-1">{user?.email}</p>
-          </div>
-          <button onClick={()=>signOut()} className="hidden lg:inline-flex px-3 py-1.5 rounded-md bg-white text-black text-sm font-semibold">
-            Esci
-          </button>
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2 space-y-6">
+          <OverviewCard teamName={(team as any)?.name} budget={(team as any)?.budget} seasonId={seasonId} />
+          {loadingContracts ? <TableSkeleton /> : <ExpiringContractsList data={expiring} seasonId={seasonId} />}
+          {loadingEvents ? <TableSkeleton /> : <HistoryList events={events} />}
         </div>
-
-        {loading && (
-          <p className="text-white/70">Caricamento dati…</p>
-        )}
-
-        {!loading && error && <p className="text-rose-300">{error}</p>}
-
-        {!loading && !team && (
-          <Panel title="Setup richiesto">
-            <p className="text-white/80">
-              Nessun team assegnato. L’admin deve impostare <code className="text-white/90">users/{"{uid}"}.teamId</code>.
-            </p>
-          </Panel>
-        )}
-
-        {!loading && team && (
-          <>
-            {/* Griglia a 3 colonne desktop */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Colonna 1: Team */}
-              <Panel title="Squadra" className="xl:col-span-1">
-                <ul className="text-sm leading-6">
-                  <li><b className="text-white/80">Nome:</b> {team.name}</li>
-                  <li><b className="text-white/80">Fondata:</b> {team.foundedYear}</li>
-                  <li><b className="text-white/80">Budget:</b> {team.budget}</li>
-                  <li><b className="text-white/80">Stagione:</b> {team.seasonId}</li>
-                </ul>
-              </Panel>
-
-              {/* Colonna 2: Stadio */}
-              <Panel title="Stadio" className="xl:col-span-1">
-                {stadium ? (
-                  <ul className="text-sm leading-6">
-                    <li><b className="text-white/80">Nome:</b> {stadium.name}</li>
-                    <li><b className="text-white/80">Capienza:</b> {stadium.capacity}</li>
-                    <li><b className="text-white/80">Prezzo biglietto:</b> {stadium.ticketPrice}</li>
-                  </ul>
-                ) : (
-                  <p className="text-white/70">Nessuno stadio collegato.</p>
-                )}
-              </Panel>
-
-              {/* Colonna 3: Scadenze */}
-              <Panel title="Contratti in evidenza" className="xl:col-span-1">
-                {expiring.length === 0 && <p className="text-white/70 text-sm">Nessuna scadenza imminente.</p>}
-                {expiring.length > 0 && (
-                  <ul className="space-y-1 text-sm">
-                    {expiring.map(c => (
-                      <li key={c.id} className="flex items-center justify-between">
-                        <span className="truncate">{c.playerName}</span>
-                        <span className="text-white/60">{c.endYear}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </Panel>
-
-              {/* Tabella contratti, full‑width */}
-              <Panel title="Rosa e contratti" className="xl:col-span-3">
-                {!contracts.length ? (
-                  <p className="text-white/70 text-sm">Nessun contratto.</p>
-                ) : (
-                  <div className="overflow-x-auto rounded-lg">
-                    <table className="w-full text-[13px] leading-tight">
-                      <thead className="bg-white/[0.06] text-white/90">
-                        <tr>
-                          <th className="text-left p-2">Giocatore</th>
-                          <th className="text-left p-2">Ruolo</th>
-                          <th className="text-right p-2">Costo</th>
-                          <th className="text-center p-2">Periodo</th>
-                          <th className="text-center p-2">Stato</th>
-                        </tr>
-                      </thead>
-                      <tbody className="[&_tr]:border-t [&_tr]:border-white/10">
-                        {contracts.map(c => (
-                          <tr key={c.id} className="hover:bg-white/[0.03] odd:bg-white/[0.015]">
-                            <td className="p-2">{c.playerName}</td>
-                            <td className="p-2"><RoleBadge role={c.role} /></td>
-                            <td className="p-2 text-right">{c.cost}</td>
-                            <td className="p-2 text-center">{c.startYear}–{c.endYear}</td>
-                            <td className="p-2 text-center"><StatusTag text={c.status} /></td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </Panel>
-            </div>
-          </>
-        )}
+        <div className="md:col-span-1 space-y-6">
+          {loadingStadium ? <CardSkeleton /> : <StadiumCard stadium={stadium as any} />}
+        </div>
       </div>
-    </AppShell>
+    </div>
   );
 }

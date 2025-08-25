@@ -23,7 +23,6 @@ export default function RosaPage() {
   }, [contracts]);
 
   return (
-    <AppShell>
       <div className="space-y-6">
         {/* header */}
         <div className="flex items-end justify-between">
@@ -83,6 +82,5 @@ export default function RosaPage() {
           </Panel>
         </div>
       </div>
-    </AppShell>
   );
 }

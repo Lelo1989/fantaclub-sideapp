@@ -1,19 +1,18 @@
-// src/app/layout.tsx
+// server component
 import type { Metadata } from "next";
 import "./globals.css";
-import AuthProvider from "@/components/AuthProvider";
+import "./theme-fm.css";          // 👈 aggiungi questa riga
 
 export const metadata: Metadata = {
-  title: "Fantaclub SideApp",
-  description: "Gestione avanzata fantacalcio",
+  title: "FantaClub SideApp",
+  description: "Gestione stile FM",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="it">
-      <body>
-        <AuthProvider>{children}</AuthProvider>
-      </body>
+      {/* attiva/disattiva la skin cambiando "fm" */}
+      <body className="min-h-screen antialiased fm">{children}</body>
     </html>
   );
 }

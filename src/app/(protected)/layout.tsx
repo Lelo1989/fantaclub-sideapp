@@ -1,6 +1,6 @@
-// src/app/(protected)/layout.tsx
-import AuthGate from "@/components/AuthGate";
+import React from "react";
+import AppShell from "@/components/AppShell";
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
-  return <AuthGate>{children}</AuthGate>;
+  return <AppShell>{children}</AppShell>;
 }

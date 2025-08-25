@@ -44,7 +44,6 @@ export default function AdminPage() {
   }
 
   return (
-    <AppShell>
       <div className="space-y-6">
         <div className="flex items-end justify-between">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight flex items-center gap-2">
@@ -101,7 +100,6 @@ export default function AdminPage() {
           </>
         )}
       </div>
-    </AppShell>
   );
 }
 
