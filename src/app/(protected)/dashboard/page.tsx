@@ -5,7 +5,7 @@ import Link from "next/link";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
-import { collection, doc, getDoc, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
+import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
 import { useTeamData } from "@/hooks/useTeamData";
 import { useStadium } from "@/hooks/useStadium";
@@ -13,6 +13,7 @@ import { useExpiringContracts, type Contract } from "@/hooks/useExpiringContract
 import { useCurrentSeasonId } from "@/hooks/useCurrentSeasonId";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { TableSkeleton } from "@/components/TablSkeleton";
+import DebugDock from "@/components/DebugDock";
 
 type Stadium = { id: string; teamId: string; name: string; capacity: number; ticketPrice: number; imageUrl?: string; };
 type HistoryEvent = { id: string; teamId: string; seasonId?: string; kind: string; payload?: any; createdAt?: any; };
@@ -137,8 +138,55 @@ function HistoryList({ events }: { events: HistoryEvent[] }) {
   );
 }
 
+/** Nuova card: Dettagli tecnici (senza alterare layout generale) */
+function TechDetailsCard(props: {
+  team: any;
+  stadium: Stadium | null;
+  contractsCount: number;
+  expiringCount: number;
+  lastEvent: HistoryEvent | null;
+}) {
+  const fmtDate = (x:any) => {
+    try{ if (x?.toDate) return x.toDate().toLocaleString("it-IT"); const d=new Date(x); return isNaN(+d)?"":d.toLocaleString("it-IT"); }catch{ return ""; }
+  };
+  const teamId = props.team?.id ?? props.team?.teamId ?? null;
+  return (
+    <Section title="Dettagli tecnici">
+      <ul className="text-sm grid grid-cols-1 md:grid-cols-2 gap-3">
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Team ID</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold break-all">{teamId ?? "—"}</div>
+        </li>
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Owner UID</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold break-all">{props.team?.ownerUserId ?? "—"}</div>
+        </li>
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Stadium ID</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold break-all">{props.stadium?.id ?? "—"}</div>
+        </li>
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Contratti totali</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">{props.contractsCount}</div>
+        </li>
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Contratti in scadenza</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">{props.expiringCount}</div>
+        </li>
+        <li className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-3">
+          <div className="text-xs uppercase tracking-wider fm-muted">Ultimo evento</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">
+            {props.lastEvent ? `${props.lastEvent.kind.replace(/\./g, " · ")} — ${fmtDate(props.lastEvent.createdAt)}` : "—"}
+          </div>
+        </li>
+      </ul>
+    </Section>
+  );
+}
+
 export default function DashboardPage() {
-  const { team } = useTeamData();
+  // useTeamData ora fornisce anche i contratti totali
+  const { team, contracts } = useTeamData();
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
@@ -147,29 +195,105 @@ export default function DashboardPage() {
 
   const [events, setEvents] = useState<HistoryEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(true);
+
+  // LOG lato pagina (attivo solo se FC_DEBUG=1)
   useEffect(() => {
-    if (!teamId) return;
-    setLoadingEvents(true);
-    const q = query(collection(db, "teamHistory"), where("teamId","==",teamId), orderBy("createdAt","desc"), limit(5));
-    const unsub = onSnapshot(q, (snap) => {
+    // @ts-ignore
+    const dbg = typeof window !== "undefined" && (window as any).FC_DEBUG;
+    if (!dbg) return;
+    console.debug("[FC][dashboard] state", {
+      teamId,
+      seasonId,
+      loadingStadium,
+      loadingContracts,
+      loadingEvents,
+      stadiumName: (stadium as any)?.name ?? null,
+      expiringLen: expiring?.length ?? 0,
+      eventsLen: events?.length ?? 0,
+      teamName: (team as any)?.name ?? null,
+      contractsLen: contracts?.length ?? 0,
+    });
+  }, [team, contracts, teamId, seasonId, stadium, expiring, events, loadingStadium, loadingContracts, loadingEvents]);
+
+  useEffect(() => {
+  if (!teamId) return;
+  setLoadingEvents(true);
+
+  console.time("[FC][dashboard] history");
+  const watchdog = setTimeout(() => {
+    // @ts-ignore
+    if (typeof window !== "undefined" && (window as any).FC_DEBUG) {
+      console.warn("[FC][dashboard] history taking >4000ms", { teamId });
+    }
+  }, 4000);
+
+  const q = query(
+    collection(db, "teamHistory"),
+    where("teamId","==",teamId),
+    orderBy("createdAt","desc"),
+    limit(5)
+  );
+  const unsub = onSnapshot(
+    q,
+    (snap) => {
       const rows = snap.docs.map((d) => withDocId<HistoryEvent>(d));
       setEvents(rows); setLoadingEvents(false);
-    });
-    return () => unsub();
-  }, [teamId]);
+      console.timeEnd("[FC][dashboard] history");
+      // @ts-ignore
+      if (typeof window !== "undefined" && (window as any).FC_DEBUG) {
+        console.debug("[FC][dashboard] history snapshot", { count: rows.length });
+      }
+      clearTimeout(watchdog);
+    },
+    (err) => {
+      console.timeEnd("[FC][dashboard] history");
+      console.error("[FC][dashboard] history ERROR", err);
+      setLoadingEvents(false);
+      clearTimeout(watchdog);
+    }
+  );
+  return () => {
+    clearTimeout(watchdog);
+    unsub();
+  };
+}, [teamId]); // 🔑 dipendenza
+
+  const lastEvent = events.length > 0 ? events[0] : null;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <OverviewCard teamName={(team as any)?.name} budget={(team as any)?.budget} seasonId={seasonId} />
-          {loadingContracts ? <TableSkeleton /> : <ExpiringContractsList data={expiring} seasonId={seasonId} />}
-          {loadingEvents ? <TableSkeleton /> : <HistoryList events={events} />}
-        </div>
-        <div className="md:col-span-1 space-y-6">
-          {loadingStadium ? <CardSkeleton /> : <StadiumCard stadium={stadium as any} />}
+    <>
+      <div className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2 space-y-6">
+            <OverviewCard teamName={(team as any)?.name} budget={(team as any)?.budget} seasonId={seasonId} />
+            {/* Nuova card con i campi richiesti */}
+            <TechDetailsCard
+              team={team as any}
+              stadium={stadium as any}
+              contractsCount={contracts?.length ?? 0}
+              expiringCount={expiring?.length ?? 0}
+              lastEvent={lastEvent}
+            />
+            {loadingContracts ? <TableSkeleton /> : <ExpiringContractsList data={expiring} seasonId={seasonId} />}
+            {loadingEvents ? <TableSkeleton /> : <HistoryList events={events} />}
+          </div>
+          <div className="md:col-span-1 space-y-6">
+            {loadingStadium ? <CardSkeleton /> : <StadiumCard stadium={stadium as any} />}
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* DEBUG DOCK */}
+      <DebugDock>
+        <div><b>teamId</b>: {teamId ?? "-"}</div>
+        <div><b>seasonId</b>: {seasonId ?? "-"}</div>
+        <div><b>loading</b>: stadium {String(loadingStadium)} · contracts {String(loadingContracts)} · events {String(loadingEvents)}</div>
+        <div><b>stadium</b>: {(stadium as any)?.name ?? "-"}</div>
+        <div><b>contracts (tot)</b>: {contracts?.length ?? 0}</div>
+        <div><b>expiring</b>: {expiring?.length ?? 0}</div>
+        <div><b>events</b>: {events?.length ?? 0}</div>
+        <div><b>team</b>: {(team as any)?.name ?? "-"}</div>
+      </DebugDock>
+    </>
   );
 }

@@ -1,56 +1,99 @@
-/* ====== FM24 SKIN (override “a caldo” delle classi più usate) ====== */
+/* ===========================
+   F M 2 4   T H E M E   (only colors)
+   Scope: attivo SOLO quando <body class="fm"> è presente
+   =========================== */
 
-/* Palette */
-.fm {
-  --fm-bg: #111322;
-  --fm-surface: #171a2b;
-  --fm-surface-2: #1d2140;
-  --fm-border: rgba(255,255,255,0.08);
-  --fm-text: #E6E7EA;
-  --fm-muted: #A1A6B3;
-  --fm-accent: #F59E0B;
-  --sidebar-gradient: linear-gradient(180deg,#6D4AEF 0%,#5C3CF2 40%,#7C3AED 100%);
+/* ---------- PALETTE (cambia qui i colori base) ---------- */
+:root {
+  --fm-bg-0: #120a2a;   /* page background (molto scuro, viola blu) */
+  --fm-bg-1: #1b1035;   /* surface bassa (sidebar / card base) */
+  --fm-bg-2: #24154b;   /* surface elevata (pannelli, topbar) */
+  --fm-border: #3a2b55; /* bordi/griglie */
+  --fm-text: #eee7ff;   /* testo principale (quasi bianco caldo) */
+  --fm-text-dim: #cbbfe1; /* testo attenuato */
+  --fm-primary: #7c4dff;   /* evidenza primaria (selezione nav) */
+  --fm-primary-strong: #5b35d5; /* hover/active su primary */
+  --fm-accent: #00e6ff;    /* accent secondario (pillole/links) */
+  --fm-success: #21d07a;
+  --fm-warning: #f7b500;
+  --fm-danger:  #ff4d6d;
 }
 
-/* Sfondo + testo globale */
-.fm { background: var(--fm-bg); color: var(--fm-text); }
-
-/* Sidebar gradient (AppShell usa inline style, ma mettiamo una fallback class) */
-.fm .sidebar-gradient { background-image: var(--sidebar-gradient); }
-
-/* ----- OVERRIDE classi Tailwind più frequenti (NON rompiamo il markup) ----- */
-.fm .bg-white          { background-color: var(--fm-surface) !important; }
-.fm .bg-slate-50       { background-color: var(--fm-bg) !important; }
-.fm .shadow-sm         { box-shadow: 0 1px 0 rgba(0,0,0,.25) !important; }
-.fm .border            { border-color: var(--fm-border) !important; }
-.fm .text-slate-900,
-.fm .text-gray-900     { color: var(--fm-text) !important; }
-.fm .text-gray-600,
-.fm .text-gray-500     { color: var(--fm-muted) !important; }
-.fm .divide-y > :not([hidden]) ~ :not([hidden]) { border-color: var(--fm-border) !important; }
-
-/* Badge e bottoni “neutri” */
-.fm .btn,
-.fm .fm-btn { 
-  display:inline-flex; align-items:center; justify-content:center;
-  height:34px; padding:0 12px; border-radius:10px; font-size:13px;
-  border:1px solid var(--fm-border)!important; background:rgba(255,255,255,.04)!important; color:var(--fm-text)!important;
+/* ---------- TIPOGRAFIA (solo colori) ---------- */
+.fm, .fm * {
+  color-scheme: dark;
 }
-.fm .btn:hover, .fm .fm-btn:hover { background: rgba(255,255,255,.08)!important; }
+.fm { color: var(--fm-text); }
+.fm .text-neutral-900 { color: var(--fm-text) !important; }
+.fm .text-neutral-800 { color: var(--fm-text) !important; }
+.fm .text-neutral-700 { color: var(--fm-text-dim) !important; }
+.fm .text-neutral-600 { color: var(--fm-text-dim) !important; }
+.fm .text-black      { color: var(--fm-text) !important; }  /* evita testo nero su bg scuro */
 
-/* CTA accent (usa dove vuoi aggiungendo la classe fm-btn--accent) */
-.fm .fm-btn--accent { background: var(--fm-accent)!important; border-color: transparent!important; color:#1b1000!important; }
+/* ---------- BACKGROUNDS ---------- */
+.fm { background-color: var(--fm-bg-0); }
+.fm .bg-neutral-100 { background-color: var(--fm-bg-0) !important; } /* page */
+.fm .bg-white       { background-color: var(--fm-bg-1) !important; } /* cards/sidebar */
+.fm .bg-white\/80   { background-color: color-mix(in oklab, var(--fm-bg-2) 80%, transparent) !important; } /* topbar */
+.fm .bg-neutral-50  { background-color: var(--fm-bg-1) !important; }
+.fm .bg-neutral-800 { background-color: #1f1538 !important; } /* input fields */
+.fm .hover\:bg-neutral-100:hover { background-color: var(--fm-bg-2) !important; }
 
-/* Link */
-.fm a, .fm .underline { color:#c9c8ff; }
-.fm a:hover, .fm .underline:hover { opacity:.85; }
+/* link / accent visivo leggero */
+.fm a { color: var(--fm-accent); }
+.fm a:hover { color: color-mix(in oklab, var(--fm-accent) 80%, white); }
 
-/* Card “tipiche” della tua UI: arrotondamenti morbidi */
-.fm .rounded-2xl { border-radius: 16px !important; }
-.fm .rounded-xl  { border-radius: 12px !important; }
+/* ---------- NAV (AppShell) ---------- */
+/* voce attiva: in AppShell è 'bg-neutral-900 text-white' → la ricoloro */
+.fm .bg-neutral-900 { background-color: var(--fm-primary) !important; }
+.fm .text-white     { color: var(--fm-text) !important; }
 
-/* Immagini stadio con bordo tenue */
-.fm .stadium-img { border:1px solid var(--fm-border)!important; border-radius: 12px!important; overflow:hidden; }
+/* voci inattive: 'text-neutral-700 hover:bg-neutral-100' */
+.fm .text-neutral-700 { color: var(--fm-text-dim) !important; }
+.fm .hover\:bg-neutral-100:hover { background-color: var(--fm-bg-2) !important; }
 
-/* OPTIONAL: force topbar scura su mobile */
-.fm header.md\:hidden { background: rgba(17,19,34,.7)!important; border-bottom:1px solid var(--fm-border)!important; color:var(--fm-text)!important; }
+/* ---------- BORDI, DIVISORI, TABELLE ---------- */
+.fm .border-neutral-200 { border-color: var(--fm-border) !important; }
+.fm .border-neutral-300 { border-color: var(--fm-border) !important; }
+.fm table thead th { color: var(--fm-text-dim); border-color: var(--fm-border); }
+.fm table tbody td { border-color: var(--fm-border); }
+
+/* ---------- INPUTS / SELECTS ---------- */
+.fm input, .fm select, .fm textarea {
+  background-color: #1f1538 !important;
+  color: var(--fm-text) !important;
+  border-color: color-mix(in oklab, var(--fm-text) 20%, transparent) !important; /* simula 'border-white/20' */
+}
+.fm .border-white\/20 { border-color: color-mix(in oklab, var(--fm-text) 20%, transparent) !important; }
+.fm input::placeholder, .fm textarea::placeholder { color: var(--fm-text-dim) !important; }
+.fm input:focus, .fm select:focus, .fm textarea:focus {
+  outline: 0;
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--fm-primary) 50%, transparent);
+  border-color: var(--fm-primary) !important;
+}
+
+/* ---------- BUTTONS (classi comuni nel progetto) ---------- */
+/* Bottoni base che usano 'bg-white text-black' → li portiamo nel tema */
+.fm .bg-white.text-black {
+  background-color: var(--fm-primary) !important;
+  color: #0f0b1f !important; /* contrasto caldo, come FM */
+}
+.fm .bg-white.text-black:hover {
+  background-color: var(--fm-primary-strong) !important;
+}
+
+/* se usi bottoni con 'bg-neutral-900 text-white' (nav attiva) */
+.fm .bg-neutral-900.text-white:hover {
+  background-color: var(--fm-primary-strong) !important;
+}
+
+/* ---------- BADGE / STATUS (se presenti) ---------- */
+.fm .badge-success { background: color-mix(in oklab, var(--fm-success) 30%, black); color: var(--fm-text); }
+.fm .badge-warning { background: color-mix(in oklab, var(--fm-warning) 25%, black); color: var(--fm-text); }
+.fm .badge-danger  { background: color-mix(in oklab, var(--fm-danger) 25%,  black); color: var(--fm-text); }
+
+/* ---------- SCROLLBAR (coerente con FM) ---------- */
+.fm ::-webkit-scrollbar { height: 10px; width: 10px; }
+.fm ::-webkit-scrollbar-track { background: var(--fm-bg-0); }
+.fm ::-webkit-scrollbar-thumb { background: var(--fm-border); border-radius: 10px; }
+.fm ::-webkit-scrollbar-thumb:hover { background: color-mix(in oklab, var(--fm-border) 80%, black); }

@@ -1,8 +1,9 @@
 // src/lib/firebase.ts
 import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, setLogLevel } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -18,3 +19,10 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app); // <-- aggiunto
+
+// 🔧 DEBUG: abilita log verbosi quando NEXT_PUBLIC_DEBUG=1
+if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DEBUG === "1") {
+  // @ts-ignore
+  (window as any).FC_DEBUG = true;
+  setLogLevel("debug"); // log firestore su console
+  console.info("[FC][firebase] Firestore logLevel=debug attivo");}

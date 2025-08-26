@@ -1,3 +1,4 @@
+// src/app/(protected)/layout.tsx
 import React from "react";
 import AppShell from "@/components/AppShell";
 
