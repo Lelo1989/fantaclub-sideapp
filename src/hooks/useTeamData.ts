@@ -2,15 +2,23 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { auth, db } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { db } from '@/lib/firebase';
+import { useAuth } from '@/components/AuthProvider';
 import {
-  collection, doc, getDoc, getDocs, limit, orderBy, query, where, DocumentData,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+  DocumentData,
 } from 'firebase/firestore';
 
 export type TeamDoc = { name: string; seasonId?: string; ownerUserId?: string; stadiumId?: string; [k: string]: any };
 export type StadiumDoc = { teamId: string; name: string; capacity?: number; ticketPrice?: number };
-export type ContractDoc = { teamId: string; playerName: string; role: string; cost: number; startYear: number; endYear: number; status: string; };
+export type ContractDoc = { teamId: string; playerName: string; role: string; cost: number; startYear: number; endYear: number; status: string };
 
 type TeamData = {
   team: (TeamDoc & { id: string }) | null;
@@ -34,25 +42,33 @@ const DBG = (...args: any[]) => {
 
 export function useTeamData() {
   const [state, setState] = useState<State>({
-    loading: true, error: null, uid: null, teamId: null, data: { team: null, stadium: null, contracts: [] },
+    loading: true,
+    error: null,
+    uid: null,
+    teamId: null,
+    data: { team: null, stadium: null, contracts: [] },
   });
 
   const alive = useRef(true);
   useEffect(() => () => { alive.current = false; }, []);
 
-  useEffect(() => {
-    DBG('effect start');
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      DBG('onAuthStateChanged fired', { hasUser: !!user, uid: user?.uid });
-      if (!user) {
-        if (alive.current) {
-          setState({ loading: false, error: null, uid: null, teamId: null, data: { team: null, stadium: null, contracts: [] } });
-        }
-        return;
-      }
+  const { user, loading: authLoading } = useAuth();
 
+  useEffect(() => {
+    DBG('effect', { hasUser: !!user, authLoading });
+    if (authLoading) return;
+
+    if (!user) {
+      if (alive.current) {
+        setState({ loading: false, error: null, uid: null, teamId: null, data: { team: null, stadium: null, contracts: [] } });
+      }
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
       try {
-        if (alive.current) setState((s) => ({ ...s, loading: true, error: null, uid: user.uid }));
+        if (alive.current && !cancelled) setState((s) => ({ ...s, loading: true, error: null, uid: user.uid }));
 
         // 1) users/{uid}
         const uRef = doc(db, 'users', user.uid);
@@ -72,7 +88,7 @@ export function useTeamData() {
 
         if (!resolvedTeamId) {
           DBG('NO TEAM for user → stop here');
-          if (alive.current) setState((s) => ({ ...s, loading: false, teamId: null, data: { team: null, stadium: null, contracts: [] } }));
+          if (alive.current && !cancelled) setState((s) => ({ ...s, loading: false, teamId: null, data: { team: null, stadium: null, contracts: [] } }));
           return;
         }
 
@@ -93,7 +109,8 @@ export function useTeamData() {
           DBG('stadium by teamId', resolvedTeamId);
           const stRes = await getDocs(stQ);
           if (!stRes.empty) {
-            const d = stRes.docs[0]; stadium = { id: d.id, ...(d.data() as StadiumDoc) };
+            const d = stRes.docs[0];
+            stadium = { id: d.id, ...(d.data() as StadiumDoc) };
           }
         }
         DBG('stadium result', stadium);
@@ -109,7 +126,7 @@ export function useTeamData() {
         const contracts = cRes.docs.map((d) => ({ id: d.id, ...(d.data() as ContractDoc) }));
         DBG('contracts count', contracts.length);
 
-        if (alive.current) {
+        if (alive.current && !cancelled) {
           setState((s) => ({
             ...s,
             loading: false,
@@ -121,25 +138,28 @@ export function useTeamData() {
         DBG('DONE update state');
       } catch (e: any) {
         console.error('[FC][useTeamData] ERROR', e);
-        if (alive.current) setState((s) => ({ ...s, loading: false, error: e?.message ?? String(e) }));
+        if (alive.current && !cancelled) setState((s) => ({ ...s, loading: false, error: e?.message ?? String(e) }));
       }
-    });
+    })();
 
     return () => {
-      DBG('cleanup unsub');
-      unsub();
+      cancelled = true;
     };
-  }, []);
+  }, [user, authLoading]);
 
-  const api = useMemo(() => ({
-    team: state.data.team,
-    stadium: state.data.stadium,
-    contracts: state.data.contracts,
-    teamId: state.teamId,
-    uid: state.uid,
-    loading: state.loading,
-    error: state.error,
-  }), [state]);
+  const api = useMemo(
+    () => ({
+      team: state.data.team,
+      stadium: state.data.stadium,
+      contracts: state.data.contracts,
+      teamId: state.teamId,
+      uid: state.uid,
+      loading: state.loading,
+      error: state.error,
+    }),
+    [state]
+  );
 
   return api;
 }
+
