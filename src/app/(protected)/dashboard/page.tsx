@@ -12,7 +12,7 @@ import { useStadium } from "@/hooks/useStadium";
 import { useExpiringContracts, type Contract } from "@/hooks/useExpiringContracts";
 import { useCurrentSeasonId } from "@/hooks/useCurrentSeasonId";
 import { CardSkeleton } from "@/components/CardSkeleton";
-import { TableSkeleton } from "@/components/TablSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import DebugDock from "@/components/DebugDock";
 
 type Stadium = { id: string; teamId: string; name: string; capacity: number; ticketPrice: number; imageUrl?: string; };

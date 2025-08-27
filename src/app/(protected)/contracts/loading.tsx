@@ -1,5 +1,5 @@
 // src/app/(protected)/contracts/loading.tsx
-import { TableSkeleton } from "@/components/TablSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
 import { CardSkeleton } from "@/components/CardSkeleton";
 
 export default function Loading() {

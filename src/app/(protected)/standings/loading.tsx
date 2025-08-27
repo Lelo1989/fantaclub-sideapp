@@ -1,5 +1,5 @@
 // src/app/(protected)/standings/loading.tsx  (oppure src/app/standings/loading.tsx)
-import { TableSkeleton } from "@/components/TablSkeleton";
+import { TableSkeleton } from "@/components/TableSkeleton";
 
 export default function Loading() {
   return (
