@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, getDocs, orderBy, query, where } from "firebase/firestore";
 import { useTeamData } from "@/hooks/useTeamData";
-import AppShell from "@/components/AppShell";
 import Panel from "@/components/Panel";
 import { History as HistoryIcon } from "lucide-react";
 
@@ -16,14 +15,14 @@ type EventRow = {
 };
 
 export default function HistoryPage() {
-  const { team } = useTeamData();
+  const { team, loading } = useTeamData();
   const [rows, setRows] = useState<EventRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       if (!team) return;
-      setLoading(true);
+      setEventsLoading(true);
       const q = query(
         collection(db, "teamHistory"),
         where("teamId", "==", team.id),
@@ -31,7 +30,7 @@ export default function HistoryPage() {
       );
       const snap = await getDocs(q);
       setRows(snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })));
-      setLoading(false);
+      setEventsLoading(false);
     })();
   }, [team]);
 
@@ -44,11 +43,14 @@ export default function HistoryPage() {
           </h1>
         </div>
 
-        {!team && <Panel title="Setup richiesto">Nessun team assegnato.</Panel>}
+        {loading && <p className="text-white/70">Caricamento…</p>}
+        {!loading && !team && (
+          <Panel title="Setup richiesto">Nessun team assegnato.</Panel>
+        )}
 
-        {team && (
+        {!loading && team && (
           <Panel title="Eventi">
-            {loading ? (
+            {eventsLoading ? (
               <p className="text-white/70 text-sm">Carico eventi…</p>
             ) : !rows.length ? (
               <p className="text-white/70 text-sm">Nessun evento.</p>

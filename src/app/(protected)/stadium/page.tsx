@@ -7,7 +7,7 @@ import { useState } from "react";
 import { registerMatchRevenue } from "@/lib/revenue";
 
 export default function StadiumPage() {
-  const { team, stadium } = useTeamData();
+  const { team, stadium, loading } = useTeamData();
   const [attendance, setAttendance] = useState<number>(10000);
   const [opponent, setOpponent] = useState<string>("");
 
@@ -20,9 +20,12 @@ export default function StadiumPage() {
         </h1>
       </div>
 
-      {!team && <Panel title="Setup richiesto">Nessun team assegnato.</Panel>}
+      {loading && <p className="text-white/70">Caricamento…</p>}
+      {!loading && !team && (
+        <Panel title="Setup richiesto">Nessun team assegnato.</Panel>
+      )}
 
-      {team && (
+      {!loading && team && (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
           {/* Dati stadio */}
           <Panel title="Dati stadio">
