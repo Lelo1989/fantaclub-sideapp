@@ -14,6 +14,8 @@ export function useUserRole() {
   const [role, setRole] = useState<"admin" | "manager" | null>(null);
 
   useEffect(() => {
+    let canceled = false;
+
     if (!user) {
       setRole(null);
       return;
@@ -21,9 +23,14 @@ export function useUserRole() {
 
     (async () => {
       const snap = await getDoc(doc(db, "users", user.uid));
+      if (canceled) return;
       const data = snap.exists() ? (snap.data() as UserDoc) : null;
       setRole(data?.role ?? "manager");
     })();
+
+    return () => {
+      canceled = true;
+    };
   }, [user]);
 
   return role;
