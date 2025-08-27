@@ -186,7 +186,7 @@ function TechDetailsCard(props: {
 
 export default function DashboardPage() {
   // useTeamData ora fornisce anche i contratti totali
-  const { team, contracts } = useTeamData();
+  const { team, contracts, loading: loadingTeam } = useTeamData();
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
@@ -204,6 +204,7 @@ export default function DashboardPage() {
     console.debug("[FC][dashboard] state", {
       teamId,
       seasonId,
+      loadingTeam,
       loadingStadium,
       loadingContracts,
       loadingEvents,
@@ -213,7 +214,7 @@ export default function DashboardPage() {
       teamName: (team as any)?.name ?? null,
       contractsLen: contracts?.length ?? 0,
     });
-  }, [team, contracts, teamId, seasonId, stadium, expiring, events, loadingStadium, loadingContracts, loadingEvents]);
+  }, [team, contracts, teamId, seasonId, stadium, expiring, events, loadingTeam, loadingStadium, loadingContracts, loadingEvents]);
 
   useEffect(() => {
   if (!teamId) return;
@@ -259,6 +260,37 @@ export default function DashboardPage() {
 }, [teamId]); // 🔑 dipendenza
 
   const lastEvent = events.length > 0 ? events[0] : null;
+  if (loadingTeam) {
+    return (
+      <>
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-6">
+              <CardSkeleton />
+              <CardSkeleton />
+              <TableSkeleton />
+              <TableSkeleton />
+            </div>
+            <div className="md:col-span-1 space-y-6">
+              <CardSkeleton />
+            </div>
+          </div>
+        </div>
+
+        {/* DEBUG DOCK */}
+        <DebugDock>
+          <div><b>teamId</b>: {teamId ?? "-"}</div>
+          <div><b>seasonId</b>: {seasonId ?? "-"}</div>
+          <div><b>loading</b>: team {String(loadingTeam)} · stadium {String(loadingStadium)} · contracts {String(loadingContracts)} · events {String(loadingEvents)}</div>
+          <div><b>stadium</b>: {(stadium as any)?.name ?? "-"}</div>
+          <div><b>contracts (tot)</b>: {contracts?.length ?? 0}</div>
+          <div><b>expiring</b>: {expiring?.length ?? 0}</div>
+          <div><b>events</b>: {events?.length ?? 0}</div>
+          <div><b>team</b>: {(team as any)?.name ?? "-"}</div>
+        </DebugDock>
+      </>
+    );
+  }
 
   return (
     <>
@@ -287,7 +319,7 @@ export default function DashboardPage() {
       <DebugDock>
         <div><b>teamId</b>: {teamId ?? "-"}</div>
         <div><b>seasonId</b>: {seasonId ?? "-"}</div>
-        <div><b>loading</b>: stadium {String(loadingStadium)} · contracts {String(loadingContracts)} · events {String(loadingEvents)}</div>
+        <div><b>loading</b>: team {String(loadingTeam)} · stadium {String(loadingStadium)} · contracts {String(loadingContracts)} · events {String(loadingEvents)}</div>
         <div><b>stadium</b>: {(stadium as any)?.name ?? "-"}</div>
         <div><b>contracts (tot)</b>: {contracts?.length ?? 0}</div>
         <div><b>expiring</b>: {expiring?.length ?? 0}</div>
