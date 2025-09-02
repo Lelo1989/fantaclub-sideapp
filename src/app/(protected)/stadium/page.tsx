@@ -83,18 +83,25 @@ export default function StadiumPage() {
                   <form
                     onSubmit={async (e) => {
                       e.preventDefault();
-                      const res = await registerMatchRevenue({
-                        teamId: team.id,
-                        stadiumId: stadium.id,
-                        stadiumCapacity: capacity, // ✅ number
-                        ticketPrice: price, // ✅ number
-                        attendance, // ✅ number
-                        opponent: opponent || "", // opzionale
-                        seasonId, // ✅ string
-                      });
-                      alert(
-                        `Incasso registrato: € ${res.revenue} (presenze conteggiate: ${res.cappedAttendance})`
-                      );
+                      try {
+                        const res = await registerMatchRevenue({
+                          teamId: team.id,
+                          stadiumId: stadium.id,
+                          stadiumCapacity: capacity, // ✅ number
+                          ticketPrice: price, // ✅ number
+                          attendance, // ✅ number
+                          opponent: opponent || "", // opzionale
+                          seasonId, // ✅ string
+                        });
+                        alert(
+                          `Incasso registrato: € ${res.revenue} (presenze conteggiate: ${res.cappedAttendance})`
+                        );
+                      } catch (error) {
+                        console.error("Errore nella registrazione dell'incasso", error);
+                        alert(
+                          "Si è verificato un errore durante la registrazione dell'incasso."
+                        );
+                      }
                     }}
                     className="space-y-3"
                   >
