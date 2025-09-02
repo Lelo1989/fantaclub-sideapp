@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import * as React from "react";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { db } from "@/lib/firebase";
 import { collection, limit, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import type { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
@@ -24,9 +25,9 @@ function withDocId<T extends Record<string, any>>(d: QueryDocumentSnapshot<Docum
   return { id: d.id, ...rest } as T & { id: string };
 }
 
-function Section({ title, right, children, alt=false }: { title: string; right?: React.ReactNode; children: React.ReactNode; alt?: boolean }) {
+function Section({ title, right, children, alt=false, onClick }: { title: string; right?: React.ReactNode; children: React.ReactNode; alt?: boolean; onClick?: () => void }) {
   return (
-    <section className={`fm-card ${alt ? "fm-card--alt" : ""}`}>
+    <section onClick={onClick} className={`fm-card ${alt ? "fm-card--alt" : ""} ${onClick ? "cursor-pointer" : ""}`}>
       <header className="px-4 md:px-5 py-3 md:py-4 flex items-center justify-between">
         <h2 className="font-semibold">{title}</h2>
         {right}
@@ -134,6 +135,34 @@ function HistoryList({ events }: { events: HistoryEvent[] }) {
           ))}
         </ul>
       )}
+    </Section>
+  );
+}
+
+function RosaCard() {
+  const router = useRouter();
+  const go = () => router.push("/rosa");
+  return (
+    <Section
+      title="Rosa"
+      right={<Link href="/rosa" onClick={(e) => e.stopPropagation()} className="fm-link text-sm">Apri Rosa</Link>}
+      onClick={go}
+    >
+      <p className="text-sm fm-muted">Gestisci la rosa della tua squadra.</p>
+    </Section>
+  );
+}
+
+function StandingsCard() {
+  const router = useRouter();
+  const go = () => router.push("/standings");
+  return (
+    <Section
+      title="Classifica"
+      right={<Link href="/standings" onClick={(e) => e.stopPropagation()} className="fm-link text-sm">Apri Classifica</Link>}
+      onClick={go}
+    >
+      <p className="text-sm fm-muted">Visualizza la classifica aggiornata.</p>
     </Section>
   );
 }
@@ -311,6 +340,8 @@ export default function DashboardPage() {
           </div>
           <div className="md:col-span-1 space-y-6">
             {loadingStadium ? <CardSkeleton /> : <StadiumCard stadium={stadium as any} />}
+            <RosaCard />
+            <StandingsCard />
           </div>
         </div>
       </div>
