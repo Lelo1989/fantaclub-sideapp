@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, doc, getDocs, orderBy, query, updateDoc } from "firebase/firestore";
-import AppShell from "@/components/AppShell";
 import Panel from "@/components/Panel";
 import { Shield } from "lucide-react";
 
