@@ -8,15 +8,16 @@ import {
   collection,
   doc,
   getDoc,
-  getDocs,
   limit,
   orderBy,
   query,
   where,
   DocumentData,
+  onSnapshot,
+  Unsubscribe,
 } from 'firebase/firestore';
 
-export type TeamDoc = { name: string; seasonId?: string; ownerUserId?: string; stadiumId?: string; [k: string]: any };
+export type TeamDoc = { name: string; seasonId?: string; ownerUserId?: string; stadiumId?: string; [k: string]: unknown };
 export type StadiumDoc = { teamId: string; name: string; capacity?: number; ticketPrice?: number };
 export type ContractDoc = { teamId: string; playerName: string; role: string; cost: number; startYear: number; endYear: number; status: string };
 
@@ -34,10 +35,11 @@ type State = {
   data: TeamData;
 };
 
-const DBG = (...args: any[]) => {
+const DBG = (...args: unknown[]) => {
   // stampa solo se flag attivo
-  // @ts-ignore
-  if (typeof window !== 'undefined' && (window as any).FC_DEBUG) console.debug('[FC][useTeamData]', ...args);
+  // @ts-expect-error FC_DEBUG is a debug flag attached to window at runtime
+  if (typeof window !== 'undefined' && (window as { FC_DEBUG?: boolean }).FC_DEBUG)
+    console.debug('[FC][useTeamData]', ...args);
 };
 
 export function useTeamData() {
@@ -66,54 +68,115 @@ export function useTeamData() {
     }
 
     let cancelled = false;
+    let teamUnsub: Unsubscribe | null = null;
+    let stadiumUnsub: Unsubscribe | null = null;
+    let contractsUnsub: Unsubscribe | null = null;
+
     (async () => {
       try {
-        if (alive.current && !cancelled) setState((s) => ({ ...s, loading: true, error: null, uid: user.uid }));
+        if (alive.current && !cancelled)
+          setState((s) => ({ ...s, loading: true, error: null, uid: user.uid }));
 
         // 1) users/{uid}
         const uRef = doc(db, 'users', user.uid);
         const uSnap = await getDoc(uRef);
-        const userTeamId = uSnap.exists() ? ((uSnap.data() as DocumentData).teamId as string | null) : null;
+        const userTeamId = uSnap.exists()
+          ? ((uSnap.data() as DocumentData).teamId as string | null)
+          : null;
         DBG('user doc', { exists: uSnap.exists(), userTeamId });
 
         // 2) fallback owner
         let resolvedTeamId: string | null = userTeamId ?? null;
         if (!resolvedTeamId) {
-          const ownerQ = query(collection(db, 'teams'), where('ownerUserId', '==', user.uid), limit(1));
+          const ownerQ = query(
+            collection(db, 'teams'),
+            where('ownerUserId', '==', user.uid),
+            limit(1)
+          );
           DBG('query owner team', { uid: user.uid });
-          const ownerRes = await getDocs(ownerQ);
-          resolvedTeamId = ownerRes.empty ? null : ownerRes.docs[0].id;
-          DBG('owner result', { empty: ownerRes.empty, resolvedTeamId });
+          resolvedTeamId = await new Promise<string | null>((resolve, reject) => {
+            const unsub = onSnapshot(
+              ownerQ,
+              (ownerRes) => {
+                const id = ownerRes.empty ? null : ownerRes.docs[0].id;
+                resolve(id);
+                unsub();
+              },
+              (err) => {
+                reject(err);
+              }
+            );
+          });
+          DBG('owner result', { resolvedTeamId });
         }
 
         if (!resolvedTeamId) {
           DBG('NO TEAM for user → stop here');
-          if (alive.current && !cancelled) setState((s) => ({ ...s, loading: false, teamId: null, data: { team: null, stadium: null, contracts: [] } }));
+          if (alive.current && !cancelled)
+            setState((s) => ({
+              ...s,
+              loading: false,
+              teamId: null,
+              data: { team: null, stadium: null, contracts: [] },
+            }));
           return;
         }
 
         // 3) team
-        const tRef = doc(db, 'teams', resolvedTeamId);
-        const tSnap = await getDoc(tRef);
-        const team = tSnap.exists() ? ({ id: tSnap.id, ...(tSnap.data() as TeamDoc) }) : null;
-        DBG('team', { exists: tSnap.exists(), team });
+        teamUnsub = onSnapshot(doc(db, 'teams', resolvedTeamId), (tSnap) => {
+          const team = tSnap.exists()
+            ? ({ id: tSnap.id, ...(tSnap.data() as TeamDoc) })
+            : null;
+          DBG('team', { exists: tSnap.exists(), team });
+          if (alive.current && !cancelled)
+            setState((s) => ({
+              ...s,
+              loading: false,
+              error: null,
+              teamId: resolvedTeamId,
+              data: { ...s.data, team },
+            }));
 
-        // 4) stadium
-        let stadium: (StadiumDoc & { id: string }) | null = null;
-        if (team?.stadiumId) {
-          DBG('stadium by id', team.stadiumId);
-          const stSnap = await getDoc(doc(db, 'stadiums', team.stadiumId));
-          if (stSnap.exists()) stadium = { id: stSnap.id, ...(stSnap.data() as StadiumDoc) };
-        } else {
-          const stQ = query(collection(db, 'stadiums'), where('teamId', '==', resolvedTeamId), limit(1));
-          DBG('stadium by teamId', resolvedTeamId);
-          const stRes = await getDocs(stQ);
-          if (!stRes.empty) {
-            const d = stRes.docs[0];
-            stadium = { id: d.id, ...(d.data() as StadiumDoc) };
+          // 4) stadium
+          stadiumUnsub?.();
+          if (team?.stadiumId) {
+            DBG('stadium by id', team.stadiumId);
+            stadiumUnsub = onSnapshot(
+              doc(db, 'stadiums', team.stadiumId),
+              (stSnap) => {
+                const stadium = stSnap.exists()
+                  ? ({ id: stSnap.id, ...(stSnap.data() as StadiumDoc) })
+                  : null;
+                if (alive.current && !cancelled)
+                  setState((s) => ({
+                    ...s,
+                    loading: false,
+                    data: { ...s.data, stadium },
+                  }));
+              }
+            );
+          } else {
+            const stQ = query(
+              collection(db, 'stadiums'),
+              where('teamId', '==', resolvedTeamId),
+              limit(1)
+            );
+            DBG('stadium by teamId', resolvedTeamId);
+            stadiumUnsub = onSnapshot(stQ, (stRes) => {
+              let stadium: (StadiumDoc & { id: string }) | null = null;
+              if (!stRes.empty) {
+                const d = stRes.docs[0];
+                stadium = { id: d.id, ...(d.data() as StadiumDoc) };
+              }
+              if (alive.current && !cancelled)
+                setState((s) => ({
+                  ...s,
+                  loading: false,
+                  data: { ...s.data, stadium },
+                }));
+            });
           }
-        }
-        DBG('stadium result', stadium);
+        });
 
         // 5) contracts
         const cQ = query(
@@ -122,28 +185,35 @@ export function useTeamData() {
           orderBy('endYear', 'desc')
         );
         DBG('contracts query', { teamId: resolvedTeamId });
-        const cRes = await getDocs(cQ);
-        const contracts = cRes.docs.map((d) => ({ id: d.id, ...(d.data() as ContractDoc) }));
-        DBG('contracts count', contracts.length);
-
-        if (alive.current && !cancelled) {
+        contractsUnsub = onSnapshot(cQ, (cRes) => {
+          const contracts = cRes.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as ContractDoc),
+          }));
+          DBG('contracts count', contracts.length);
+          if (alive.current && !cancelled)
+            setState((s) => ({
+              ...s,
+              loading: false,
+              data: { ...s.data, contracts },
+            }));
+        });
+      } catch (e: unknown) {
+        console.error('[FC][useTeamData] ERROR', e);
+        if (alive.current && !cancelled)
           setState((s) => ({
             ...s,
             loading: false,
-            error: null,
-            teamId: resolvedTeamId,
-            data: { team, stadium, contracts },
+            error: e instanceof Error ? e.message : String(e),
           }));
-        }
-        DBG('DONE update state');
-      } catch (e: any) {
-        console.error('[FC][useTeamData] ERROR', e);
-        if (alive.current && !cancelled) setState((s) => ({ ...s, loading: false, error: e?.message ?? String(e) }));
       }
     })();
 
     return () => {
       cancelled = true;
+      teamUnsub?.();
+      stadiumUnsub?.();
+      contractsUnsub?.();
     };
   }, [user, authLoading]);
 
