@@ -3,8 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ReactNode, useMemo } from 'react';
-// Facoltativo: se vuoi mostrare link admin solo agli admin, abilita la riga sotto
-// import { useUserRole } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 
 type Props = {
   children: ReactNode;
@@ -26,11 +25,8 @@ const navItems: NavItem[] = [
 
 export default function AppShell({ children }: Props) {
   const pathname = usePathname();
-
-  // Facoltativo: mostra link admin solo se ruolo admin
-  // const { role } = useUserRole();
-  // const isAdmin = role === 'admin';
-  const isAdmin = true; // <-- se vuoi sempre visibile, poi rimetti il controllo con useUserRole
+  const { role } = useUserRole();
+  const isAdmin = role === 'admin';
 
   const adminItems: NavItem[] = useMemo(
     () =>
