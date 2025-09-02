@@ -216,6 +216,7 @@ function TechDetailsCard(props: {
 export default function DashboardPage() {
   // useTeamData ora fornisce anche i contratti totali
   const { team, contracts, loading: loadingTeam } = useTeamData();
+  console.log('[dashboard]', { team, contracts, loadingTeam });
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
