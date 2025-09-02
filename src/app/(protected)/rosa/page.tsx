@@ -1,6 +1,5 @@
 "use client";
 
-import AppShell from "@/components/AppShell";
 import Panel from "@/components/Panel";
 import Pitch from "@/components/Pitch";
 import { useTeamData } from "@/hooks/useTeamData";

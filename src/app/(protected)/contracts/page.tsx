@@ -3,7 +3,6 @@
 import { useAuth } from "@/components/AuthProvider";
 import { useTeamData } from "@/hooks/useTeamData";
 import { addContract, renewContract, releaseContract } from "@/lib/contracts";
-import AppShell from "@/components/AppShell";
 import Panel from "@/components/Panel";
 import { RoleBadge, StatusTag } from "@/components/RoleBadge";
 import { FileText, RotateCcw, UserMinus, PlusCircle } from "lucide-react";
