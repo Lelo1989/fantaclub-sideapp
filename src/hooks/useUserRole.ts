@@ -33,5 +33,5 @@ export function useUserRole() {
     };
   }, [user]);
 
-  return role;
+  return { role };
 }
