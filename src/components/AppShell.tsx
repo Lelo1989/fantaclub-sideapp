@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', match: (p) => p === '/dashboard' },
   { href: '/contracts', label: 'Contratti', match: (p) => p === '/contracts' },
   { href: '/stadium', label: 'Stadio', match: (p) => p === '/stadium' },
+  { href: '/rosa', label: 'Rosa', match: (p) => p === '/rosa' },
   { href: '/history', label: 'Storico', match: (p) => p === '/history' },
   { href: '/standings', label: 'Classifica', match: (p) => p === '/standings' },
 ];
