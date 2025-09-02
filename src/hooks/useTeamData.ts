@@ -123,60 +123,93 @@ export function useTeamData() {
         }
 
         // 3) team
-        teamUnsub = onSnapshot(doc(db, 'teams', resolvedTeamId), (tSnap) => {
-          const team = tSnap.exists()
-            ? ({ id: tSnap.id, ...(tSnap.data() as TeamDoc) })
-            : null;
-          DBG('team', { exists: tSnap.exists(), team });
-          if (alive.current && !cancelled)
-            setState((s) => ({
-              ...s,
-              loading: false,
-              error: null,
-              teamId: resolvedTeamId,
-              data: { ...s.data, team },
-            }));
+        teamUnsub = onSnapshot(
+          doc(db, 'teams', resolvedTeamId),
+          (tSnap) => {
+            const team = tSnap.exists()
+              ? ({ id: tSnap.id, ...(tSnap.data() as TeamDoc) })
+              : null;
+            DBG('team', { exists: tSnap.exists(), team });
+            if (alive.current && !cancelled)
+              setState((s) => ({
+                ...s,
+                loading: false,
+                error: null,
+                teamId: resolvedTeamId,
+                data: { ...s.data, team },
+              }));
 
-          // 4) stadium
-          stadiumUnsub?.();
-          if (team?.stadiumId) {
-            DBG('stadium by id', team.stadiumId);
-            stadiumUnsub = onSnapshot(
-              doc(db, 'stadiums', team.stadiumId),
-              (stSnap) => {
-                const stadium = stSnap.exists()
-                  ? ({ id: stSnap.id, ...(stSnap.data() as StadiumDoc) })
-                  : null;
-                if (alive.current && !cancelled)
-                  setState((s) => ({
-                    ...s,
-                    loading: false,
-                    data: { ...s.data, stadium },
-                  }));
-              }
-            );
-          } else {
-            const stQ = query(
-              collection(db, 'stadiums'),
-              where('teamId', '==', resolvedTeamId),
-              limit(1)
-            );
-            DBG('stadium by teamId', resolvedTeamId);
-            stadiumUnsub = onSnapshot(stQ, (stRes) => {
-              let stadium: (StadiumDoc & { id: string }) | null = null;
-              if (!stRes.empty) {
-                const d = stRes.docs[0];
-                stadium = { id: d.id, ...(d.data() as StadiumDoc) };
-              }
-              if (alive.current && !cancelled)
-                setState((s) => ({
-                  ...s,
-                  loading: false,
-                  data: { ...s.data, stadium },
-                }));
-            });
+            // 4) stadium
+            stadiumUnsub?.();
+            if (team?.stadiumId) {
+              DBG('stadium by id', team.stadiumId);
+              stadiumUnsub = onSnapshot(
+                doc(db, 'stadiums', team.stadiumId),
+                (stSnap) => {
+                  const stadium = stSnap.exists()
+                    ? ({ id: stSnap.id, ...(stSnap.data() as StadiumDoc) })
+                    : null;
+                  if (alive.current && !cancelled)
+                    setState((s) => ({
+                      ...s,
+                      loading: false,
+                      data: { ...s.data, stadium },
+                    }));
+                },
+                (err) => {
+                  console.error('[FC][useTeamData]', err);
+                  if (alive.current && !cancelled)
+                    setState((s) => ({
+                      ...s,
+                      loading: false,
+                      error: err.message,
+                    }));
+                }
+              );
+            } else {
+              const stQ = query(
+                collection(db, 'stadiums'),
+                where('teamId', '==', resolvedTeamId),
+                limit(1)
+              );
+              DBG('stadium by teamId', resolvedTeamId);
+              stadiumUnsub = onSnapshot(
+                stQ,
+                (stRes) => {
+                  let stadium: (StadiumDoc & { id: string }) | null = null;
+                  if (!stRes.empty) {
+                    const d = stRes.docs[0];
+                    stadium = { id: d.id, ...(d.data() as StadiumDoc) };
+                  }
+                  if (alive.current && !cancelled)
+                    setState((s) => ({
+                      ...s,
+                      loading: false,
+                      data: { ...s.data, stadium },
+                    }));
+                },
+                (err) => {
+                  console.error('[FC][useTeamData]', err);
+                  if (alive.current && !cancelled)
+                    setState((s) => ({
+                      ...s,
+                      loading: false,
+                      error: err.message,
+                    }));
+                }
+              );
+            }
+          },
+          (err) => {
+            console.error('[FC][useTeamData]', err);
+            if (alive.current && !cancelled)
+              setState((s) => ({
+                ...s,
+                loading: false,
+                error: err.message,
+              }));
           }
-        });
+        );
 
         // 5) contracts
         const cQ = query(
@@ -185,19 +218,31 @@ export function useTeamData() {
           orderBy('endYear', 'desc')
         );
         DBG('contracts query', { teamId: resolvedTeamId });
-        contractsUnsub = onSnapshot(cQ, (cRes) => {
-          const contracts = cRes.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as ContractDoc),
-          }));
-          DBG('contracts count', contracts.length);
-          if (alive.current && !cancelled)
-            setState((s) => ({
-              ...s,
-              loading: false,
-              data: { ...s.data, contracts },
+        contractsUnsub = onSnapshot(
+          cQ,
+          (cRes) => {
+            const contracts = cRes.docs.map((d) => ({
+              id: d.id,
+              ...(d.data() as ContractDoc),
             }));
-        });
+            DBG('contracts count', contracts.length);
+            if (alive.current && !cancelled)
+              setState((s) => ({
+                ...s,
+                loading: false,
+                data: { ...s.data, contracts },
+              }));
+          },
+          (err) => {
+            console.error('[FC][useTeamData]', err);
+            if (alive.current && !cancelled)
+              setState((s) => ({
+                ...s,
+                loading: false,
+                error: err.message,
+              }));
+          }
+        );
       } catch (e: unknown) {
         console.error('[FC][useTeamData] ERROR', e);
         if (alive.current && !cancelled)
