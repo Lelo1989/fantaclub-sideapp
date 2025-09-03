@@ -13,7 +13,7 @@
     "seed:standings": "ts-node --esm scripts/seed-standings.ts",
     "seed:history": "ts-node --esm scripts/seed-history.ts",
     "import:players": "ts-node scripts/import-fg-players.ts",
-    "test": "tsc src/lib/__tests__/fc.test.ts --module esnext --moduleResolution node --target ES2020 --outDir build/tests && node --test build/tests/__tests__/fc.test.js && rm -rf build"
+    "test": "rm -rf build && tsc src/**/__tests__/*.ts --module esnext --moduleResolution node --target ES2020 --jsx react-jsx --outDir build/tests && node --test build/tests/**/__tests__/*.js && rm -rf build"
   },
   "dependencies": {
     "csv-parse": "^6.1.0",

@@ -16,6 +16,7 @@ import {
   onSnapshot,
   Unsubscribe,
 } from 'firebase/firestore';
+import logger from '@/lib/logger';
 
 export type TeamDoc = { name: string; seasonId?: string; ownerUserId?: string; stadiumId?: string; [k: string]: unknown };
 export type StadiumDoc = { teamId: string; name: string; capacity?: number; ticketPrice?: number };
@@ -35,12 +36,7 @@ type State = {
   data: TeamData;
 };
 
-const DBG = (...args: unknown[]) => {
-  // stampa solo se flag attivo
-  // @ts-expect-error FC_DEBUG is a debug flag attached to window at runtime
-  if (typeof window !== 'undefined' && (window as { FC_DEBUG?: boolean }).FC_DEBUG)
-    console.debug('[FC][useTeamData]', ...args);
-};
+const DBG = (...args: unknown[]) => logger.debug('[useTeamData]', ...args);
 
 export function useTeamData() {
   const [state, setState] = useState<State>({
@@ -158,7 +154,7 @@ export function useTeamData() {
                     }));
                 },
                 (err) => {
-                  console.error('[FC][useTeamData]', err);
+                  logger.error('[useTeamData]', err);
                   if (alive.current && !cancelled)
                     setState((s) => ({
                       ...s,
@@ -190,7 +186,7 @@ export function useTeamData() {
                     }));
                 },
                 (err) => {
-                  console.error('[FC][useTeamData]', err);
+                  logger.error('[useTeamData]', err);
                   if (alive.current && !cancelled)
                     setState((s) => ({
                       ...s,
@@ -202,7 +198,7 @@ export function useTeamData() {
             }
           },
           (err) => {
-            console.error('[FC][useTeamData]', err);
+            logger.error('[useTeamData]', err);
             if (alive.current && !cancelled)
               setState((s) => ({
                 ...s,
@@ -235,7 +231,7 @@ export function useTeamData() {
               }));
           },
           (err) => {
-            console.error('[FC][useTeamData]', err);
+            logger.error('[useTeamData]', err);
             if (alive.current && !cancelled)
               setState((s) => ({
                 ...s,
@@ -245,7 +241,7 @@ export function useTeamData() {
           }
         );
       } catch (e: unknown) {
-        console.error('[FC][useTeamData] ERROR', e);
+        logger.error('[useTeamData] ERROR', e);
         if (alive.current && !cancelled)
           setState((s) => ({
             ...s,

@@ -15,6 +15,7 @@ import { useCurrentSeasonId } from "@/hooks/useCurrentSeasonId";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { TableSkeleton } from "@/components/TableSkeleton";
 import DebugDock from "@/components/DebugDock";
+import logger from "@/lib/logger";
 
 type Stadium = { id: string; teamId: string; name: string; capacity: number; ticketPrice: number; imageUrl?: string; };
 type HistoryEvent = { id: string; teamId: string; seasonId?: string; kind: string; payload?: any; createdAt?: any; };
@@ -224,8 +225,12 @@ function TechDetailsCard(props: {
 
 export default function DashboardPage() {
   // useTeamData ora fornisce anche i contratti totali
+codex/add-explicit-error-message-in-useteamdata
   const { team, contracts, loading: loadingTeam, error } = useTeamData();
   console.log('[dashboard]', { team, contracts, loadingTeam, error });
+  const { team, contracts, loading: loadingTeam } = useTeamData();
+  logger.info('[dashboard]', { team, contracts, loadingTeam });
+main
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
@@ -240,7 +245,7 @@ export default function DashboardPage() {
     // @ts-ignore
     const dbg = typeof window !== "undefined" && (window as any).FC_DEBUG;
     if (!dbg) return;
-    console.debug("[FC][dashboard] state", {
+    logger.debug('[dashboard] state', {
       teamId,
       seasonId,
       loadingTeam,
@@ -263,7 +268,7 @@ export default function DashboardPage() {
   const watchdog = setTimeout(() => {
     // @ts-ignore
     if (typeof window !== "undefined" && (window as any).FC_DEBUG) {
-      console.warn("[FC][dashboard] history taking >4000ms", { teamId });
+      logger.warn('[dashboard] history taking >4000ms', { teamId });
     }
   }, 4000);
 
@@ -281,13 +286,13 @@ export default function DashboardPage() {
       console.timeEnd("[FC][dashboard] history");
       // @ts-ignore
       if (typeof window !== "undefined" && (window as any).FC_DEBUG) {
-        console.debug("[FC][dashboard] history snapshot", { count: rows.length });
+        logger.debug('[dashboard] history snapshot', { count: rows.length });
       }
       clearTimeout(watchdog);
     },
     (err) => {
       console.timeEnd("[FC][dashboard] history");
-      console.error("[FC][dashboard] history ERROR", err);
+      logger.error('[dashboard] history ERROR', err);
       setLoadingEvents(false);
       clearTimeout(watchdog);
     }

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useMemo } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { signOut } from '@/lib/auth';
+import { handleLogout } from '@/lib/logout';
 
 type Props = {
   children: ReactNode;
@@ -39,11 +40,6 @@ export default function AppShell({ children }: Props) {
               href: '/admin',
               label: 'Admin',
               match: (p) => p === '/admin',
-            },
-            {
-              href: '/admin/standings',
-              label: 'Admin Classifica',
-              match: (p) => p === '/admin/standings',
             },
           ]
         : [],
@@ -95,10 +91,7 @@ export default function AppShell({ children }: Props) {
               <span>v1.0</span>
               <button
                 className="px-2 py-1 rounded-md border hover:bg-neutral-100"
-                onClick={async () => {
-                  await signOut();
-                  router.replace('/login');
-                }}
+                onClick={() => handleLogout(router, signOut)}
               >
                 Esci
               </button>

@@ -20,6 +20,16 @@ You can start editing the page by modifying `src/app/page.tsx`. The page auto-up
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Debug logging
+
+To enable verbose debug logs in the browser and from the custom logger utility, create a `.env.local` file and set:
+
+```
+NEXT_PUBLIC_DEBUG=1
+```
+
+When the flag is present, `FC_DEBUG` is enabled and additional `[FC]` prefixed debug messages will appear in the console.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

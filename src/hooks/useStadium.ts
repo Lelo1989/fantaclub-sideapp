@@ -12,6 +12,7 @@ import {
   Unsubscribe,
   DocumentData,
 } from 'firebase/firestore';
+import logger from '@/lib/logger';
 
 type StadiumDoc = {
   teamId: string;
@@ -21,12 +22,7 @@ type StadiumDoc = {
   imageUrl?: string;
 };
 
-const DBG = (...args: any[]) => {
-  // @ts-ignore
-  if (typeof window !== 'undefined' && (window as any).FC_DEBUG) {
-    console.debug('[FC][useStadium]', ...args);
-  }
-};
+const DBG = (...args: unknown[]) => logger.debug('[useStadium]', ...args);
 
 export function useStadium(teamId?: string) {
   const [stadium, setStadium] = useState<(StadiumDoc & { id: string }) | null>(null);
@@ -75,7 +71,7 @@ export function useStadium(teamId?: string) {
         setLoading(false);
       },
       (err) => {
-        console.error('[FC][useStadium] ERROR', err);
+        logger.error('[useStadium] ERROR', err);
         setError(err.message ?? String(err));
         setLoading(false);
       }
