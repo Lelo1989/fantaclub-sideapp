@@ -335,8 +335,10 @@ export default function DashboardPage() {
   return (
     <>
       <div className="space-y-6">
-        {!team && error && (
-          <p className="text-red-500 text-sm">{error}</p>
+        {error && (
+          <div className="bg-red-500 text-white px-4 py-2 rounded" role="alert">
+            {error}
+          </div>
         )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
