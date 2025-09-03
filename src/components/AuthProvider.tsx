@@ -4,6 +4,7 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import logger from "@/lib/logger";
 
 type AuthCtx = { user: User | null; loading: boolean };
 const Ctx = createContext<AuthCtx>({ user: null, loading: true });
@@ -20,22 +21,22 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     let off: (() => void) | undefined;
     try {
       off = onAuthStateChanged(auth, (u) => {
-        console.log("[AuthProvider] Auth state changed", u);
+        logger.info("[AuthProvider] Auth state changed", u);
         setUser(u);
         setLoading(false);
       });
     } catch (error) {
-      console.error("[AuthProvider] onAuthStateChanged error", error);
+      logger.error("[AuthProvider] onAuthStateChanged error", error);
       setLoading(false);
     }
     if (!off) {
-      console.error("[AuthProvider] onAuthStateChanged did not return a handler");
+      logger.error("[AuthProvider] onAuthStateChanged did not return a handler");
       setLoading(false);
     }
     const timeout = setTimeout(() => {
       setLoading((prev) => {
         if (prev) {
-          console.warn("[AuthProvider] auth loading timeout");
+          logger.warn("[AuthProvider] auth loading timeout");
           return false;
         }
         return prev;

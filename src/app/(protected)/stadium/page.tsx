@@ -5,6 +5,7 @@ import Panel from "@/components/Panel";
 import { Building2 } from "lucide-react";
 import { useState } from "react";
 import { registerMatchRevenue } from "@/lib/revenue";
+import logger from "@/lib/logger";
 
 export default function StadiumPage() {
   const { team, stadium, loading } = useTeamData();
@@ -97,7 +98,7 @@ export default function StadiumPage() {
                           `Incasso registrato: € ${res.revenue} (presenze conteggiate: ${res.cappedAttendance})`
                         );
                       } catch (error) {
-                        console.error("Errore nella registrazione dell'incasso", error);
+                        logger.error("Errore nella registrazione dell'incasso", error);
                         alert(
                           "Si è verificato un errore durante la registrazione dell'incasso."
                         );
