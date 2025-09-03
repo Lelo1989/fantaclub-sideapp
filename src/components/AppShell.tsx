@@ -1,9 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { ReactNode, useMemo } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { signOut } from '@/lib/auth';
 
 type Props = {
   children: ReactNode;
@@ -26,6 +27,7 @@ const navItems: NavItem[] = [
 
 export default function AppShell({ children }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
   const { role } = useUserRole();
   const isAdmin = role === 'admin';
 
@@ -89,8 +91,18 @@ export default function AppShell({ children }: Props) {
         <div className="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-neutral-200">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="font-semibold tracking-tight">Area riservata</div>
-            {/* spazio per azioni globali / utente */}
-            <div className="text-sm text-neutral-500">v1.0</div>
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
+              <span>v1.0</span>
+              <button
+                className="px-2 py-1 rounded-md border hover:bg-neutral-100"
+                onClick={async () => {
+                  await signOut();
+                  router.replace('/login');
+                }}
+              >
+                Esci
+              </button>
+            </div>
           </div>
         </div>
 
