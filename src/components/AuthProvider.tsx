@@ -18,10 +18,23 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const off = onAuthStateChanged(auth, (u) => {
+      console.log("[AuthProvider] Auth state changed", u);
       setUser(u);
       setLoading(false);
     });
-    return () => off();
+    const timeout = setTimeout(() => {
+      setLoading((prev) => {
+        if (prev) {
+          console.warn("[AuthProvider] auth loading timeout");
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+    return () => {
+      off();
+      clearTimeout(timeout);
+    };
   }, []);
 
   return <Ctx.Provider value={{ user, loading }}>{children}</Ctx.Provider>;
