@@ -3,6 +3,13 @@ import { initializeApp, getApp, getApps } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, setLogLevel } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import logger from "@/lib/logger";
+
+declare global {
+  interface Window {
+    FC_DEBUG?: boolean;
+  }
+}
 
 
 const firebaseConfig = {
@@ -22,7 +29,6 @@ export const storage = getStorage(app); // <-- aggiunto
 
 // 🔧 DEBUG: abilita log verbosi quando NEXT_PUBLIC_DEBUG=1
 if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DEBUG === "1") {
-  // @ts-ignore
-  (window as any).FC_DEBUG = true;
+  window.FC_DEBUG = true;
   setLogLevel("debug"); // log firestore su console
-  console.info("[FC][firebase] Firestore logLevel=debug attivo");}
+  logger.info("[firebase] Firestore logLevel=debug attivo");}

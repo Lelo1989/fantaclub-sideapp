@@ -12,6 +12,7 @@ import {
   where,
   DocumentData,
 } from 'firebase/firestore';
+import logger from '@/lib/logger';
 
 export type Contract = {
   id: string;
@@ -24,12 +25,7 @@ export type Contract = {
   status: string;  // 'active' | 'released' | ...
 };
 
-const DBG = (...args: any[]) => {
-  // @ts-ignore
-  if (typeof window !== 'undefined' && (window as any).FC_DEBUG) {
-    console.debug('[FC][useExpiringContracts]', ...args);
-  }
-};
+const DBG = (...args: unknown[]) => logger.debug('[useExpiringContracts]', ...args);
 
 export function useExpiringContracts(teamId?: string, seasonId?: string) {
   const [data, setData] = useState<Contract[]>([]);
@@ -89,7 +85,7 @@ export function useExpiringContracts(teamId?: string, seasonId?: string) {
         DBG('got', rows.length);
       },
       (err) => {
-        console.error('[FC][useExpiringContracts] ERROR', err);
+        logger.error('[useExpiringContracts] ERROR', err);
         setError(err.message ?? String(err));
         setLoading(false);
       }
