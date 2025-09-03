@@ -116,6 +116,7 @@ export function useTeamData() {
             setState((s) => ({
               ...s,
               loading: false,
+              error: 'Nessun team assegnato all’utente',
               teamId: null,
               data: { team: null, stadium: null, contracts: [] },
             }));
