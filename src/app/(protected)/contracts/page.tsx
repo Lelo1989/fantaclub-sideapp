@@ -69,6 +69,11 @@ export default function ContractsPage() {
           <p className="text-white/60 text-xs sm:text-sm">{user?.email}</p>
         </div>
 
+        {error && (
+          <div className="bg-red-500 text-white px-4 py-2 rounded" role="alert">
+            {error}
+          </div>
+        )}
         {loading && <p className="text-white/70">Caricamento…</p>}
         {!loading && !team && (
           <Panel title="Setup richiesto">

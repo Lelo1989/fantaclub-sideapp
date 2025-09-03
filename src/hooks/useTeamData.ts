@@ -68,6 +68,16 @@ export function useTeamData() {
     let stadiumUnsub: Unsubscribe | null = null;
     let contractsUnsub: Unsubscribe | null = null;
 
+    const handleError = (err: unknown) => {
+      logger.error('[useTeamData]', err);
+      const e = err as { code?: string; message?: string };
+      const message = e.code === 'permission-denied'
+        ? 'Permessi insufficienti, contatta l’amministratore'
+        : e.message ?? String(err);
+      if (alive.current && !cancelled)
+        setState((s) => ({ ...s, loading: false, error: message }));
+    };
+
     (async () => {
       try {
         if (alive.current && !cancelled)
@@ -153,15 +163,7 @@ export function useTeamData() {
                       data: { ...s.data, stadium },
                     }));
                 },
-                (err) => {
-                  logger.error('[useTeamData]', err);
-                  if (alive.current && !cancelled)
-                    setState((s) => ({
-                      ...s,
-                      loading: false,
-                      error: err.message,
-                    }));
-                }
+                (err) => handleError(err)
               );
             } else {
               const stQ = query(
@@ -185,27 +187,11 @@ export function useTeamData() {
                       data: { ...s.data, stadium },
                     }));
                 },
-                (err) => {
-                  logger.error('[useTeamData]', err);
-                  if (alive.current && !cancelled)
-                    setState((s) => ({
-                      ...s,
-                      loading: false,
-                      error: err.message,
-                    }));
-                }
+                (err) => handleError(err)
               );
             }
           },
-          (err) => {
-            logger.error('[useTeamData]', err);
-            if (alive.current && !cancelled)
-              setState((s) => ({
-                ...s,
-                loading: false,
-                error: err.message,
-              }));
-          }
+          (err) => handleError(err)
         );
 
         // 5) contracts
@@ -230,24 +216,10 @@ export function useTeamData() {
                 data: { ...s.data, contracts },
               }));
           },
-          (err) => {
-            logger.error('[useTeamData]', err);
-            if (alive.current && !cancelled)
-              setState((s) => ({
-                ...s,
-                loading: false,
-                error: err.message,
-              }));
-          }
+          (err) => handleError(err)
         );
       } catch (e: unknown) {
-        logger.error('[useTeamData] ERROR', e);
-        if (alive.current && !cancelled)
-          setState((s) => ({
-            ...s,
-            loading: false,
-            error: e instanceof Error ? e.message : String(e),
-          }));
+        handleError(e);
       }
     })();
 

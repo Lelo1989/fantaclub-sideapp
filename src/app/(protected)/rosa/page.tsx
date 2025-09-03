@@ -8,7 +8,7 @@ import { Users } from "lucide-react";
 import { useMemo } from "react";
 
 export default function RosaPage() {
-  const { team, contracts, loading } = useTeamData();
+  const { team, contracts, loading, error } = useTeamData();
 
   // Ordina per ruolo (P, D, C, A) e poi alfabetico giocatore
   const rows = useMemo(() => {
@@ -31,6 +31,11 @@ export default function RosaPage() {
           </h1>
           {team && <span className="text-white/60 text-xs sm:text-sm">{team.name}</span>}
         </div>
+        {error && (
+          <div className="bg-red-500 text-white px-4 py-2 rounded" role="alert">
+            {error}
+          </div>
+        )}
 
         {/* layout 2 colonne: sinistra campo, destra tabella */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

@@ -8,7 +8,7 @@ import { registerMatchRevenue } from "@/lib/revenue";
 import logger from "@/lib/logger";
 
 export default function StadiumPage() {
-  const { team, stadium, loading } = useTeamData();
+  const { team, stadium, loading, error } = useTeamData();
   const [attendance, setAttendance] = useState<number>(10000);
   const [opponent, setOpponent] = useState<string>("");
 
@@ -21,6 +21,11 @@ export default function StadiumPage() {
         </h1>
       </div>
 
+      {error && (
+        <div className="bg-red-500 text-white px-4 py-2 rounded" role="alert">
+          {error}
+        </div>
+      )}
       {loading && <p className="text-white/70">Caricamento…</p>}
       {!loading && !team && (
         <Panel title="Setup richiesto">Nessun team assegnato.</Panel>

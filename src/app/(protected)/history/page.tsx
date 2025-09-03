@@ -15,7 +15,7 @@ type EventRow = {
 };
 
 export default function HistoryPage() {
-  const { team, loading } = useTeamData();
+  const { team, loading, error } = useTeamData();
   const [rows, setRows] = useState<EventRow[]>([]);
   const [eventsLoading, setEventsLoading] = useState(true);
 
@@ -43,6 +43,11 @@ export default function HistoryPage() {
           </h1>
         </div>
 
+        {error && (
+          <div className="bg-red-500 text-white px-4 py-2 rounded" role="alert">
+            {error}
+          </div>
+        )}
         {loading && <p className="text-white/70">Caricamento…</p>}
         {!loading && !team && (
           <Panel title="Setup richiesto">Nessun team assegnato.</Panel>
