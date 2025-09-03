@@ -13,12 +13,16 @@ export default function AuthGate({ children }: { children: ReactNode }) {
     if (!loading && !user) router.replace("/login");
   }, [loading, user, router]);
 
-  if (loading || !user) {
+  if (loading) {
     return (
       <div className="min-h-screen grid place-items-center">
         <p>Caricamento…</p>
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return <>{children}</>;
