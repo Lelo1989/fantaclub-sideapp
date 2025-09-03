@@ -38,22 +38,31 @@ function Section({ title, right, children, alt=false, onClick }: { title: string
   );
 }
 
-function OverviewCard({ teamName, budget, seasonId }: { teamName?: string; budget?: number; seasonId?: string | null }) {
+function OverviewCard({ teamName, budget, seasonId, error }: { teamName?: string; budget?: number; seasonId?: string | null; error?: string | null }) {
   const money = (n?: number) => (n==null? "—" : new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(n));
   return (
     <Section title="Panoramica" alt>
       <div className="grid grid-cols-2 gap-4 text-sm fm-muted">
         <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
           <div className="text-xs uppercase tracking-wider">Squadra</div>
-          <div className="mt-1 text-[var(--fm-text)] font-semibold">{teamName ?? "—"}</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">
+            {teamName ?? "—"}
+            {!teamName && error ? ` (${error})` : ""}
+          </div>
         </div>
         <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
           <div className="text-xs uppercase tracking-wider">Budget</div>
-          <div className="mt-1 text-[var(--fm-text)] font-semibold">{money(budget)}</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">
+            {budget==null ? "—" : money(budget)}
+            {budget==null && error ? ` (${error})` : ""}
+          </div>
         </div>
         <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
           <div className="text-xs uppercase tracking-wider">Stagione</div>
-          <div className="mt-1 text-[var(--fm-text)] font-semibold">{seasonId ?? "—"}</div>
+          <div className="mt-1 text-[var(--fm-text)] font-semibold">
+            {seasonId ?? "—"}
+            {!seasonId && error ? ` (${error})` : ""}
+          </div>
         </div>
         <div className="rounded-xl border fm-border bg-[rgba(255,255,255,0.03)] p-4">
           <div className="text-xs uppercase tracking-wider">Azioni rapide</div>
@@ -216,8 +225,12 @@ function TechDetailsCard(props: {
 
 export default function DashboardPage() {
   // useTeamData ora fornisce anche i contratti totali
+codex/add-explicit-error-message-in-useteamdata
+  const { team, contracts, loading: loadingTeam, error } = useTeamData();
+  console.log('[dashboard]', { team, contracts, loadingTeam, error });
   const { team, contracts, loading: loadingTeam } = useTeamData();
   logger.info('[dashboard]', { team, contracts, loadingTeam });
+main
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
@@ -326,9 +339,12 @@ export default function DashboardPage() {
   return (
     <>
       <div className="space-y-6">
+        {!team && error && (
+          <p className="text-red-500 text-sm">{error}</p>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-2 space-y-6">
-            <OverviewCard teamName={(team as any)?.name} budget={(team as any)?.budget} seasonId={seasonId} />
+            <OverviewCard teamName={(team as any)?.name} budget={(team as any)?.budget} seasonId={seasonId} error={error} />
             {/* Nuova card con i campi richiesti */}
             <TechDetailsCard
               team={team as any}

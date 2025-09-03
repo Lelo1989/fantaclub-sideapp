@@ -10,7 +10,7 @@ import { useMemo, useState } from "react";
 
 export default function ContractsPage() {
   const { user } = useAuth();
-  const { team, contracts, loading } = useTeamData();
+  const { team, contracts, loading, error } = useTeamData();
 
   const [form, setForm] = useState({
     playerName: "",
@@ -70,7 +70,11 @@ export default function ContractsPage() {
         </div>
 
         {loading && <p className="text-white/70">Caricamento…</p>}
-        {!loading && !team && <Panel title="Setup richiesto">Nessun team assegnato.</Panel>}
+        {!loading && !team && (
+          <Panel title="Setup richiesto">
+            Nessun team assegnato{error ? ` (${error})` : "."}
+          </Panel>
+        )}
 
         {!loading && team && (
           <>
