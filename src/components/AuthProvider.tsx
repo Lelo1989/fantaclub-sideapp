@@ -17,11 +17,21 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const off = onAuthStateChanged(auth, (u) => {
-      console.log("[AuthProvider] Auth state changed", u);
-      setUser(u);
+    let off: (() => void) | undefined;
+    try {
+      off = onAuthStateChanged(auth, (u) => {
+        console.log("[AuthProvider] Auth state changed", u);
+        setUser(u);
+        setLoading(false);
+      });
+    } catch (error) {
+      console.error("[AuthProvider] onAuthStateChanged error", error);
       setLoading(false);
-    });
+    }
+    if (!off) {
+      console.error("[AuthProvider] onAuthStateChanged did not return a handler");
+      setLoading(false);
+    }
     const timeout = setTimeout(() => {
       setLoading((prev) => {
         if (prev) {
@@ -32,7 +42,9 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
       });
     }, 5000);
     return () => {
-      off();
+      if (off) {
+        off();
+      }
       clearTimeout(timeout);
     };
   }, []);
