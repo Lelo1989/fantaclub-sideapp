@@ -225,12 +225,8 @@ function TechDetailsCard(props: {
 
 export default function DashboardPage() {
   // useTeamData ora fornisce anche i contratti totali
-codex/add-explicit-error-message-in-useteamdata
   const { team, contracts, loading: loadingTeam, error } = useTeamData();
   logger.info('[dashboard]', { team, contracts, loadingTeam, error });
-  const { team, contracts, loading: loadingTeam } = useTeamData();
-  logger.info('[dashboard]', { team, contracts, loadingTeam });
-main
   const teamId = useMemo(() => (team as any)?.id ?? (team as any)?.teamId ?? null, [team]);
   const seasonId = useCurrentSeasonId((team as any)?.seasonId);
 
