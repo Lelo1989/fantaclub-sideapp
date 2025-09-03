@@ -40,11 +40,6 @@ export default function AppShell({ children }: Props) {
               label: 'Admin',
               match: (p) => p === '/admin',
             },
-            {
-              href: '/admin/standings',
-              label: 'Admin Classifica',
-              match: (p) => p === '/admin/standings',
-            },
           ]
         : [],
     [isAdmin]
